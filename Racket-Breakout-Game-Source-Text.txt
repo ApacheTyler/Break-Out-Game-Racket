@@ -1,0 +1,1359 @@
+;Tyler Freeman
+;HW04
+;http://www.radford.edu/~itec380/2014fall-ibarland/Homeworks/hw04/hw04.html
+
+;Import
+(require 2htdp/image)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; -- COSTANTS -- COSTANTS -- COSTANTS -- COSTANTS -- COSTANTS -- COSTANTS --
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;World Width
+
+(define WORLD-WIDTH 300)
+(define WORLD-HEIGHT 200)
+(define WORLD-SCENE (empty-scene WORLD-WIDTH WORLD-HEIGHT))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;BALL -- BALL -- BALL -- BALL -- BALL -- BALL -- BALL -- BALL -- BALL -- BALL
+;
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; a ball is:
+;  (make-ball [real?] [real?])
+;
+(define-struct ball (x y dx dy))
+;
+;  x is the distance from the left edge of screen, in pixels.
+;  y is the distance from the top  edge of screen, in pixels.
+; dx is the speed in the x-direction, in pixels/tick.
+; dy is the speed in the y-direction, in pixels/tick.
+
+#;;TEMPLATE
+; func-for-ball : ball -> ???
+;
+(define (func-for-nums a-ball)
+  (ball-x a-ball)
+  (ball-y a-ball)
+  (ball-dx a-ball)
+  (ball-dy a-ball)
+)
+;
+;
+;Examples of the data
+; A typical ball
+(define late-ball (make-ball 7 2 -2 +1))
+; Another ball like the previous, but one tick later, if it doesn't hit anything.
+(define current-ball(make-ball 5 3 -2 +1))
+; Might be a ball at the start of the game, if it's a 300x200 field.
+(define center-ball (make-ball 150 190 +1 -1))
+(define typical-ball (make-ball 150 100 +1 -1))
+;
+;move-ball: ball -> ball
+;
+;Move ball takes in a ball and returns a ball one tick (movement) later
+(define (move-ball a-ball)
+  (make-ball
+        (+
+         (ball-x a-ball)
+         (ball-dx a-ball)
+        )
+        (+
+         (ball-y a-ball)
+         (ball-dy a-ball)
+        )
+        (ball-dx a-ball)
+        (ball-dy a-ball)
+   )
+)
+;move-ball spec
+(check-expect(move-ball late-ball)
+             current-ball
+)
+(check-expect(move-ball center-ball)
+             (make-ball 151 189 +1 -1)
+)
+(check-expect(move-ball (make-ball 151 189 0 0))
+             (make-ball 151 189 0 0)
+)
+
+#|    JAVA CODE
+
+public class Ball{
+
+  private int x;
+  private int y;
+  private int dx;
+  private int dy;
+
+  public Ball(int _x, int _y, int _dx, int _dy){
+    this.x = _x;
+    this.y = _y;
+    this.dx = _dx;
+    this.dy = _dy;
+  }
+
+  public Ball move(Ball aBall){
+    return new Ball(
+                  (aBall.x + aBall.dx),
+                  (aBall.y + aBall.dy),
+                  aBall.dx,
+                  aBall.dy
+                );
+  }
+
+}
+
+
+|#
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;PADDLE -- PADDLE -- PADDLE -- PADDLE -- PADDLE -- PADDLE -- PADDLE -- PADDLE
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;A paddle is:
+;   (make-paddle [natnum] [natnum] [ -1 || 0 || 1 ])
+;
+
+(define-struct paddle (width x-coord direction))
+
+;sample data
+(define small-paddle (make-paddle 2 3 -1))
+(define med-paddle (make-paddle 15 6 1))
+(define big-paddle (make-paddle 42 23 0))
+
+(define big-left-edge-paddle (make-paddle 42 0 -1))
+(define big-right-edge-paddle (make-paddle 42 258 1))
+(define big-still-right-edge-paddle (make-paddle 42 258 0))
+
+(define med-left-edge-paddle (make-paddle 15 0 -1))
+(define med-right-edge-paddle (make-paddle 15 285 1))
+(define med-still-left-edge-paddle (make-paddle 15 0 0))
+
+(define big-middle-paddle (make-paddle 42 150 1))
+(define med-middle-paddle (make-paddle 15 150 -1))
+(define med-still-middle-paddle (make-paddle 15 150 0))
+
+
+
+#; ;PADDLE TEMPALTE
+;func-paddle: paddle -> ???
+;
+;Does something with a paddle
+(define (func-paddle a-paddle)
+ (paddle-width a-paddle)
+ (paddle-x-coord a-paddle)
+ (paddle-direction a-paddle)
+ {cond
+   [(= paddle-direction a-paddle -1)
+     ()
+   ]
+   [(= paddle-direction a-paddle 0)
+     ()
+   ]
+   [(= paddle-direction a-paddle 1)
+     ()
+   ]
+ }
+)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;End paddle struct defn
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;move-paddle : paddle -> paddle
+;
+;updates paddle x-coord according to the direction the paddel is moving
+(define (move-paddle a-paddle)
+  {cond
+   [(= (paddle-direction a-paddle) -1)
+     (make-paddle
+       (paddle-width a-paddle)
+       (+ (paddle-x-coord a-paddle) -3)
+       -1
+     )
+   ]
+   [( = (paddle-direction a-paddle) 0 )
+     (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       0
+     )
+   ]
+   [( = (paddle-direction a-paddle) 1 )
+     (make-paddle
+       (paddle-width a-paddle)
+       (+ (paddle-x-coord a-paddle) 3)
+       1
+     )
+   ]
+ }
+)
+;move-paddle spec
+(check-expect (move-paddle big-paddle)
+              big-paddle
+)
+(check-expect (move-paddle small-paddle)
+              (make-paddle 2 0 -1)
+)
+(check-expect (move-paddle med-paddle)
+              (make-paddle 15 9 1)
+)
+
+
+;update-paddle : paddle -> paddle
+;
+;updates paddle x-coord if key-press is active and paddle is within bounds of
+;; world
+(define (update-paddle a-paddle)
+  {cond
+   [(= (paddle-direction a-paddle) -1)
+      {cond ;;Check if paddle will go out of bounds
+        [(>= 0 (paddle-x-coord (move-paddle a-paddle)))
+          (make-paddle
+           (paddle-width a-paddle)
+           (paddle-x-coord a-paddle)
+           0
+          )
+        ]
+        [else
+          (move-paddle a-paddle)
+        ]
+      }
+   ]
+   [(= (paddle-direction a-paddle) 0)
+      (move-paddle a-paddle)
+   ]
+   [(= (paddle-direction a-paddle) 1)
+      {cond ;;Check if paddle width + x coordinate is bigger than bounds
+        [(<= WORLD-WIDTH (+ (paddle-width a-paddle) (paddle-x-coord (move-paddle a-paddle))))
+          (make-paddle
+           (paddle-width a-paddle)
+           (paddle-x-coord a-paddle)
+           0
+          )
+        ]
+        [else
+          (move-paddle a-paddle)
+        ]
+      }
+   ]
+ }
+)
+;update-paddle spec
+(check-expect (update-paddle big-paddle)
+               big-paddle
+)
+;soo far left
+(check-expect (update-paddle big-left-edge-paddle)
+              (make-paddle 42 0 0)
+)
+(check-expect (update-paddle med-left-edge-paddle)
+              (make-paddle 15 0 0)
+)
+(check-expect (update-paddle med-still-left-edge-paddle)
+              (make-paddle 15 0 0)
+)
+;soo far right
+(check-expect (update-paddle big-right-edge-paddle)
+              (make-paddle 42 258 0)
+)
+(check-expect (update-paddle med-right-edge-paddle)
+              (make-paddle 15 285 0)
+)
+(check-expect (update-paddle big-still-right-edge-paddle)
+              (make-paddle 42 258 0)
+)
+;actually move
+(check-expect (update-paddle big-middle-paddle)
+              (make-paddle 42 153 1)
+)
+(check-expect (update-paddle med-middle-paddle)
+              (make-paddle 15 147 -1)
+)
+(check-expect (update-paddle med-still-middle-paddle)
+              (make-paddle 15 150 0)
+)
+
+;key-press data definition
+;
+;A key-press is:
+; "left" -> corresponding to the left arrow on the key-board
+; "right" -> corresponding to the right arrow on the key-board
+;
+
+;paddle-key-down : key-press paddle -> paddle
+;
+;Responds to a key-press and returns paddle with appropiate direction
+(define (paddle-handle-key-press a-paddle a-key-press)
+  {cond
+    [(string=? "left" a-key-press)
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       -1
+      )
+    ]
+    [(string=? "right" a-key-press)
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       1
+      )
+    ]
+    [else
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       (paddle-direction a-paddle)
+      )
+    ]
+  }
+)
+;paddle-key-down spec
+(check-expect (paddle-handle-key-press med-paddle "right")
+              (make-paddle 15 6 1)
+)
+(check-expect (paddle-handle-key-press med-paddle "left")
+              (make-paddle 15 6 -1)
+)
+(check-expect (paddle-handle-key-press big-right-edge-paddle "right")
+              (make-paddle 42 258 1)
+)
+(check-expect (paddle-handle-key-press med-left-edge-paddle "left")
+              (make-paddle 15 0 -1)
+)
+(check-expect (paddle-handle-key-press med-left-edge-paddle "t")
+              (make-paddle 15 0 -1)
+)
+
+;paddle-key-up : key-press paddle -> paddle
+;
+;Responds to a key-press being released and returns paddle with appropiate direction
+(define (paddle-handle-key-up a-paddle a-key-press)
+  {cond
+    [(string=? "left" a-key-press)
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       0
+      )
+    ]
+    [(string=? "right" a-key-press)
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       0
+      )
+    ]
+    [else
+      (make-paddle
+       (paddle-width a-paddle)
+       (paddle-x-coord a-paddle)
+       (paddle-direction a-paddle)
+      )
+    ]
+  }
+)
+;paddle-key-up spec
+(check-expect (paddle-handle-key-up med-paddle "right")
+              (make-paddle 15 6 0)
+)
+(check-expect (paddle-handle-key-up med-paddle "left")
+              (make-paddle 15 6 0)
+)
+(check-expect (paddle-handle-key-up big-right-edge-paddle "right")
+              (make-paddle 42 258 0)
+)
+(check-expect (paddle-handle-key-up med-left-edge-paddle "left")
+              (make-paddle 15 0 0)
+)
+(check-expect (paddle-handle-key-up med-left-edge-paddle "t")
+              (make-paddle 15 0 -1)
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;BRICK -- BRICK -- BRICK -- BRICK -- BRICK -- BRICK -- BRICK -- BRICK -- BRICK
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;Brick Definition
+;
+;A brick is:
+;(make-brick [nat-num] [nat-num])
+(define-struct brick (x y))
+;
+;x is the x-coordinate where the left corner of the brick is located
+;y is the y-coordinate where the left corner of the brick is located
+
+#;;TEMPLATE
+;
+;func-for-brick : brick -> brick
+;
+#|
+(define (func-for-brick a-brick)
+  (brick-x ...)
+  (brick-y ...)
+)
+|#
+;examples of a brick
+(define mid-brick (make-brick 20 20)) ;;Not sure why, but racket gets fussy if I dont define this twice?
+(define mid-brick (make-brick 20 20))
+(define left-brick (make-brick 10 50))
+(define right-brick (make-brick 70 35))
+
+;overlap? : natnum natnum natnum natnum natnum natnum natnum natnum -> boolean
+;
+;Checks to see if the dimensions of two rectangles overlap with one another
+(define (overlap?
+          rect-one-x rect-one-y rect-one-width rect-one-height
+          rect-two-x rect-two-y rect-two-width rect-two-height
+        )
+          {cond
+            [(and;check within width
+                (and
+                 (>= (+ rect-one-x rect-one-width) rect-two-x); within right bounds
+                 (<= rect-one-x (+ rect-two-x rect-two-width)); within left bounds
+                )
+                (and
+                 (>= (+ rect-one-y rect-one-height) rect-two-y) ;within top bounds
+                 (<= rect-one-y (+ rect-two-y rect-two-height)) ; within bottom bounds
+                )
+              );overlapping
+                #t
+             ]
+             [else ;not overlapping
+                #f
+             ]
+           }
+)
+;overlap? spec
+;directly on top of
+(check-expect (overlap? 100 100 40 10
+                                    100 100  8 8)
+              true
+)
+;just within left bounds
+(check-expect (overlap? 100 90 40 10
+                                    92  90 8  8)
+              true
+)
+;just outside left bounds
+(check-expect (overlap? 100 90 40 10
+                                    91  90 8  8)
+              false
+)
+;just inside right bounds
+(check-expect (overlap? 100 90 40 10
+                                    140 90 8  8)
+              true
+)
+;just outside right bounds
+(check-expect (overlap? 100 90 40 10
+                                    141 90 8  8)
+              false
+)
+;just inside top bounds
+(check-expect (overlap?  100 90 40 10
+                                    140 100 8 8)
+              true
+)
+;just outisde top bounds
+(check-expect (overlap? 100 90 40 10
+                                    140 101 8 8)
+              false
+)
+;just touching bottom bounds
+(check-expect (overlap? 100 90 40 10
+                                    140 82 8 8)
+              true
+)
+;just underneath bottom bounds
+(check-expect (overlap? 100 90 40 10
+                                    140 79 8  8)
+              false
+)
+;not touching at all
+(check-expect (overlap? 100 90 40 10
+                                    89  89 8  8)
+              false
+)
+;underneath but not touching
+(check-expect (overlap? 100 90 40 10
+                                    89  89 8  8)
+              false
+)
+;over-top but not touching
+(check-expect (overlap? 100 90 40 10
+                                    100 101 8 8)
+              false
+)
+;to the left but not touching
+(check-expect (overlap? 100 90 40 10
+                                    89  95 8  8)
+              false
+)
+;to the right but not touching
+(check-expect (overlap? 141 90 40 10
+                                    99  95 8  8)
+              false
+)
+
+;List of bricks data definition
+;A list of bricks is:
+;  empty
+;  (make-cons [brick] [list-of-brick])
+;
+
+;Empty list of bricks
+(define no-bricks empty)
+;List with one bick
+(define one-bricks
+ (cons
+  (make-brick 0 100)
+  empty
+ )
+)
+;List with two brick
+(define two-bricks
+ (cons
+  (make-brick 0 100)
+  (cons
+    (make-brick 40 100)
+    empty
+  )
+ )
+)
+;List with three bricks
+(define three-bricks
+ (cons
+   (make-brick 0 100)
+    (cons
+     (make-brick 40 100)
+      (cons
+       (make-brick 80 100)
+        (cons
+         (make-brick 120 100)
+          empty
+         )
+        )
+       )
+      )
+)
+;List with four bricks
+(define four-bricks
+ (cons
+  (make-brick 0 100)
+  (cons
+    (make-brick 40 100)
+    (cons
+      (make-brick 80 100)
+      (cons
+        (make-brick 120 100)
+        empty
+    )
+  )
+ )
+)
+)
+
+;List with five bricks
+(define five-bricks
+ (list
+   (make-brick 0 100)
+   (make-brick 40 100)
+   (make-brick 80 100)
+   (make-brick 120 100)
+   (make-brick 160 100)
+ )
+)
+;List with six bricks
+(define world-list-of-bricks
+ (list
+  (make-brick 0 100)
+  (make-brick 41 100)
+  (make-brick 82 100)
+  (make-brick 123 100)
+  (make-brick 164 100)
+  (make-brick 205 100)
+ )
+)
+;
+#| Template
+
+;func-for-lob : a-lob ??? -> ???
+;
+;description for func-for-lob
+(define (FUNC-FOR-LOB a-lob PARAMS)
+ {cond
+   [(empty? a-lob)
+       (FUNC)
+   ]
+   [(cons? a-lob)
+       (FUNC
+         (first a-lob)
+         (FUNC-FOR-LOB PARAMS (rest a-lob))
+       )
+   ]
+ }
+)
+;FUNC-FOR-LOB spec
+(check-expect (FUNC-FOR-LOB PARAMS a-lob)
+               EXPECTED
+)
+|#
+
+;draw-bricks : list-of-brick, image → image
+;
+;draw-brick takes in a-lob and returns an backround-img with
+;each brick drawn on the image
+(define (draw-bricks a-lob background-img)
+ {cond
+   [(empty? a-lob)
+       background-img
+   ]
+   [(cons? a-lob)
+       (draw-brick
+         (first a-lob)
+         (draw-bricks (rest a-lob) background-img)
+       )
+   ]
+ }
+)
+;FUNC-FOR-LOB spec
+(check-expect (draw-bricks two-bricks WORLD-SCENE)
+              (draw-brick
+                 (make-brick 0 100)
+                 (draw-brick
+                   (make-brick 40 100)
+                    WORLD-SCENE
+                 )
+              )
+)
+(check-expect (draw-bricks four-bricks WORLD-SCENE)
+              (draw-brick
+                 (make-brick 0 100)
+                 (draw-brick
+                   (make-brick 40 100)
+                   (draw-brick
+                     (make-brick 80 100)
+                     (draw-brick
+                       (make-brick 120 100)
+                       WORLD-SCENE
+                     )
+                   )
+                 )
+              )
+)
+(check-expect (draw-bricks empty WORLD-SCENE)
+              WORLD-SCENE
+)
+(check-expect (draw-bricks world-list-of-bricks WORLD-SCENE)
+               .
+)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;WORLD -- WORLD -- WORLD -- WORLD -- WORLD -- WORLD -- WORLD -- WORLD -- WORLD
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;World Definition
+;
+;A world is:
+;   (make-paddle [paddle] [ball] [list-of-bricks])
+;
+
+(define-struct world (the-paddle the-ball bricks))
+
+;the-paddle is the paddle that hits the ball
+;the-ball is the ball that hits and bounces off bricks
+;brick is the brick that a dissapears after a ball hits the brick
+;
+   #|;;Template
+;
+;func-for-world : paddle ball list-of-bricks -> world
+;
+;descirption of func-for-world
+(define (func-for-world a-paddle a-ball a-list-of-bricks)
+  (world-the-paddle a-paddle)
+  (world-the-ball a-ball)
+  {cond
+    [(empty? (world-bricks a-list-of-bricks))
+        (FUNC)
+    ]
+    [(cons? (world-bricks a-list-of-bricks))
+        (FUNC)
+    ]
+  }
+)
+
+  |#
+
+;Examples of world
+(define first-world (make-world big-paddle current-ball one-bricks))
+(define second-world (make-world big-still-right-edge-paddle typical-ball two-bricks))
+(define third-world (make-world med-paddle typical-ball three-bricks))
+
+;update-world : world -> world
+;
+;Takes in a world and returns that world one tick later
+;
+(define (update-world a-world)
+  (make-world
+    (update-paddle (world-the-paddle a-world))
+    (move-ball (update-ball a-world (world-the-ball a-world)))
+    (bricks-remaining (world-bricks a-world) (world-the-ball a-world))
+  )
+)
+;update world spec
+(check-expect (update-world first-world)
+              (make-world
+                (make-paddle 42 23 0)
+                (make-ball 7 4 2 1)
+                (cons (make-brick 0 100) empty)
+              )
+)
+(check-expect (update-world (make-world big-still-right-edge-paddle typical-ball four-bricks))
+              (make-world
+               (update-paddle big-still-right-edge-paddle)
+               (move-ball (update-ball (make-world big-still-right-edge-paddle typical-ball four-bricks) typical-ball))
+               (bricks-remaining (world-bricks (make-world big-still-right-edge-paddle typical-ball four-bricks)) typical-ball)
+              )
+)
+(check-expect (update-world (make-world med-left-edge-paddle current-ball two-bricks))
+              (make-world
+               (update-paddle med-left-edge-paddle)
+               (move-ball (update-ball (make-world med-left-edge-paddle current-ball two-bricks) current-ball))
+               (bricks-remaining two-bricks current-ball)
+              )
+)
+(check-expect (update-world (make-world med-left-edge-paddle current-ball no-bricks))
+              (make-world
+               (update-paddle med-left-edge-paddle)
+               (move-ball (update-ball (make-world med-left-edge-paddle current-ball no-bricks) current-ball))
+                empty
+              )
+)
+
+
+;world-handle-key : world keypress -> world
+;
+;Takes in a world and delegats the key press amongst all contained structs
+(define (world-handle-key a-world a-keypress)
+  (make-world
+    (paddle-handle-key-press
+     (world-the-paddle a-world)
+     a-keypress
+    )
+    (world-the-ball a-world)
+    (world-bricks a-world)
+  )
+)
+;world-handle-key spec
+(check-expect (world-handle-key first-world "left")
+              (make-world
+                (paddle-handle-key-press
+                  (world-the-paddle first-world)
+                  "left"
+                )
+                (world-the-ball first-world)
+                (world-bricks first-world)
+              )
+)
+(check-expect (world-handle-key second-world "right")
+              (make-world
+                (paddle-handle-key-press
+                  (world-the-paddle second-world)
+                  "right"
+                )
+                (world-the-ball second-world)
+                (world-bricks second-world)
+              )
+)
+(check-expect (world-handle-key third-world "q")
+              (make-world
+                (paddle-handle-key-press
+                  (world-the-paddle third-world)
+                  "q"
+                )
+                (world-the-ball third-world)
+                (world-bricks third-world)
+              )
+)
+
+;world-handle-key-up : world keypress -> world
+;
+;Takes in a world and delegats the key press amongst all contained structs when key is released
+(define (world-handle-key-up a-world a-keypress)
+  (make-world
+    (paddle-handle-key-up
+     (world-the-paddle a-world)
+     a-keypress
+    )
+    (world-the-ball a-world)
+    (world-bricks a-world)
+  )
+)
+;world-handle-key-up spec
+(check-expect (world-handle-key-up first-world "left")
+              (make-world
+                (paddle-handle-key-up
+                  (world-the-paddle first-world)
+                  "left"
+                )
+                (world-the-ball first-world)
+                (world-bricks first-world)
+              )
+)
+(check-expect (world-handle-key-up second-world "right")
+              (make-world
+                (paddle-handle-key-up
+                  (world-the-paddle second-world)
+                  "right"
+                )
+                (world-the-ball second-world)
+                (world-bricks second-world)
+              )
+)
+(check-expect (world-handle-key third-world "q")
+              (make-world
+                (paddle-handle-key-up
+                  (world-the-paddle third-world)
+                  "q"
+                )
+                (world-the-ball third-world)
+                (world-bricks third-world)
+              )
+)
+
+;draw-brick : brick, image -> image
+;
+;takes a brick and a “background” image, and returns that background image
+;with a brick drawn on top of it.
+(define (draw-brick a-brick an-image)
+  (place-image
+    (rectangle
+      40
+      10
+      "solid"
+      "red"
+    )
+    (+
+    (brick-x a-brick) 20 )
+    (brick-y a-brick)
+    an-image
+  )
+)
+;draw-brick spec
+(check-expect (draw-brick mid-brick WORLD-SCENE)
+              (place-image
+                (rectangle 40 10 "solid" "red")
+                (+ (brick-x mid-brick) 20)
+                (brick-y mid-brick)
+                WORLD-SCENE
+              )
+)
+(check-expect (draw-brick right-brick WORLD-SCENE)
+              .
+)
+(check-expect (draw-brick left-brick WORLD-SCENE)
+              .
+)
+
+
+
+;draw-paddle : paddle, image -> image
+;
+;takes a paddle and a “background” image, and returns that background image
+;with a paddle drawn on top of it.
+(define (draw-paddle a-paddle an-image)
+  (place-image
+    (rectangle 42 5 "solid" "black")
+    (+ (paddle-x-coord a-paddle) (/ (paddle-width a-paddle) 2))
+    190
+    an-image
+  )
+)
+;draw-paddle spec
+(check-expect (draw-paddle big-right-edge-paddle WORLD-SCENE)
+              (place-image
+                (rectangle 42 5 "solid" "black")
+                (+ (paddle-x-coord big-right-edge-paddle) (/ (paddle-width big-right-edge-paddle) 2))
+                190
+                WORLD-SCENE
+              )
+)
+(check-expect (draw-paddle small-paddle WORLD-SCENE)
+              (place-image
+                (rectangle 42 5 "solid" "black")
+                (+ (paddle-x-coord small-paddle) (/ (paddle-width small-paddle) 2))
+                190
+                WORLD-SCENE
+              )
+)
+
+;draw-ball : ball image -> image
+;
+;takes a ball and a “background” image, and returns that background image
+;with a paddle drawn on top of it.
+(define (draw-ball a-ball an-image)
+  (place-image
+    (circle 8 'solid "green")
+    (+ (ball-x a-ball) 4)
+    (+ (ball-y a-ball) 4)
+    an-image
+  )
+)
+;draw-ball spec
+(check-expect (draw-ball current-ball WORLD-SCENE)
+              (place-image
+                (circle 8 'solid "green")
+                (+ (ball-x current-ball) 4)
+                (+ (ball-y current-ball) 4)
+                WORLD-SCENE
+              )
+)
+(check-expect (draw-ball typical-ball WORLD-SCENE)
+              (place-image
+                (circle 8 'solid "green")
+                (+ (ball-x typical-ball) 4)
+                (+ (ball-y typical-ball) 4)
+                WORLD-SCENE
+              )
+)
+
+;draw-world : world -> image
+;
+;Draws a scene containing a brick, a ball and a paddle
+(define (draw-world a-world)
+  (draw-ball ;;Draws ball
+    (world-the-ball a-world)
+    (draw-paddle  ;;Draws paddle
+     (world-the-paddle a-world)
+     (draw-bricks  ;;Draws brick
+        (world-bricks a-world)
+        WORLD-SCENE
+     )
+    )
+  )
+)
+;draw-world-spec
+(check-expect (draw-world first-world)
+            (draw-ball
+              current-ball
+              (draw-paddle
+                 big-paddle
+                 (draw-bricks
+                    one-bricks
+                     WORLD-SCENE
+                  )
+               )
+             )
+)
+(check-expect (draw-world second-world)
+               .
+)
+(check-expect (draw-world third-world)
+               .
+)
+
+;brick-collide-ball? : list-of-bricks ball -> boolean
+;
+;Takes in a-lob and a-ball and return weather or not a-ball
+;is touch a-brick
+;brick width is 40, height is 10
+;ball width i 8, height is 8
+(define (brick-collide-ball? a-brick a-ball)
+  (if
+    (overlap?
+       ;balls dimensions and location
+        (ball-x a-ball)
+        (ball-y a-ball)
+        8
+        8
+       ;first brick in list
+        (brick-x a-brick)
+        (- (brick-y a-brick) 8)
+        40
+        20
+     )
+         #t ;true condition
+         #f ;else condition
+  )
+)
+;brick-colid-ball? spec
+(check-expect (brick-collide-ball? (make-brick 120 100) (world-the-ball third-world))
+              #t
+)
+(check-expect (brick-collide-ball? (make-brick 0 0) typical-ball)
+              #f
+)
+
+;bricks-remaining : list-of-brick ball → list-of-brick
+;
+;Returns a new list of bricks with all bricks that are not
+;touching a-ball
+(define (bricks-remaining a-lob a-ball)
+ {cond
+   [(empty? a-lob)
+       empty
+   ]
+   [(cons? a-lob)
+       (if (brick-collide-ball? (first a-lob) a-ball)
+              (bricks-remaining (rest a-lob) a-ball)
+              (cons (first a-lob) (bricks-remaining (rest a-lob) a-ball))
+       )
+   ]
+ }
+)
+;FUNC-FOR-LOB spec
+(check-expect (bricks-remaining (world-bricks third-world) (world-the-ball third-world))
+               (list
+                 (make-brick 0 100)
+                 (make-brick 40 100)
+                 (make-brick 80 100)
+               )
+)
+(check-expect (bricks-remaining one-bricks (make-ball 0 100 4 4))
+               empty
+)
+(check-expect (bricks-remaining (world-bricks third-world) (make-ball 49 100 4 4))
+               (list
+                 (make-brick 0 100)
+                 (make-brick 80 100)
+                 (make-brick 120 100)
+               )
+)
+;touching two bricks at once
+(check-expect (bricks-remaining (world-bricks third-world) (make-ball 40 100 4 4))
+               (list
+                 (make-brick 80 100)
+                 (make-brick 120 100)
+               )
+)
+(check-expect (bricks-remaining (world-bricks third-world) (make-ball 120 100 4 4))
+               (list
+                 (make-brick 0 100)
+                 (make-brick 40 100)
+               )
+)
+(check-expect (bricks-remaining empty (make-ball 40 100 4 4))
+               empty
+)
+
+
+;Rectangle data-definition
+;
+;A rectangle is:
+; [natnum] [natnum] [natnum] [natnum]
+;
+;The first natnum's in a rectangle correspond to
+; a x-cooridnate
+; a y-cooridnate
+; a width
+; a height
+;respectively
+
+;reflect-ball-vertically : rectangle, ball → ball
+;
+;Takes in a a-rectangle and a-ball and inverts a-ball dx and a-ball dy
+;if the ball is overlapping with the rectangle
+(define (reflect-ball-vertically rect-x-coord rect-y-coord rect-width rect-height a-ball)
+  (if
+   (overlap?
+        rect-x-coord
+        rect-y-coord
+        rect-width
+        rect-height
+        ;balls dim
+        (ball-x a-ball)
+        (ball-y a-ball)
+        8
+        8
+    )
+     (make-ball;ball overlaps
+         (ball-x a-ball)
+         (ball-y a-ball)
+         (ball-dx a-ball)
+         (* -1 (ball-dy a-ball))
+     )
+     (make-ball;ball does not overlap
+         (ball-x a-ball)
+         (ball-y a-ball)
+         (ball-dx a-ball)
+         (ball-dy a-ball)
+     )
+   )
+)
+;reflect-ball-off-bricks spec
+;reflectiing
+(check-expect (reflect-ball-vertically 120 100 40 10 (world-the-ball third-world))
+              (make-ball
+                (ball-x (world-the-ball third-world))
+                (ball-y (world-the-ball third-world))
+                (ball-dx (world-the-ball third-world))
+                (* -1 (ball-dy (world-the-ball third-world)))
+              )
+)
+(check-expect (reflect-ball-vertically 0 100 40 10 (make-ball 0 100 5 5))
+              (make-ball
+                0
+                100
+                5
+                (* -1 5)
+              )
+)
+;not reflecting
+(check-expect (reflect-ball-vertically 0 100 40 10 (world-the-ball third-world))
+              (make-ball
+                (ball-x (world-the-ball third-world))
+                (ball-y (world-the-ball third-world))
+                (ball-dx (world-the-ball third-world))
+                (ball-dy (world-the-ball third-world))
+              )
+)
+(check-expect (reflect-ball-vertically 40 100 40 10 (world-the-ball third-world))
+              (make-ball
+                (ball-x (world-the-ball third-world))
+                (ball-y (world-the-ball third-world))
+                (ball-dx (world-the-ball third-world))
+                (ball-dy (world-the-ball third-world))
+              )
+)
+;reflect-ball-off-brick : brick ball → ball
+;
+;inverts a-ball dy if touching a-brick
+(define (reflect-ball-off-brick a-brick a-ball)
+  (reflect-ball-vertically
+     (brick-x a-brick)
+     (brick-y a-brick)
+     40
+     10
+     a-ball
+  )
+)
+;reflect-ball-off-brick
+(check-expect (reflect-ball-off-brick (make-brick 120 100) (world-the-ball third-world))
+              (make-ball
+               (ball-x (world-the-ball third-world))
+               (ball-y (world-the-ball third-world))
+               (ball-dx (world-the-ball third-world))
+               (* -1 (ball-dy (world-the-ball third-world)))
+              )
+)
+(check-expect (reflect-ball-off-brick (make-brick 0 100) (make-ball 0 100 4 -5))
+              (make-ball
+                0
+                100
+                4
+                5
+              )
+)
+(check-expect (reflect-ball-off-brick (make-brick 40 100) (world-the-ball third-world))
+              (make-ball
+               (ball-x (world-the-ball third-world))
+               (ball-y (world-the-ball third-world))
+               (ball-dx (world-the-ball third-world))
+               (ball-dy (world-the-ball third-world))
+              )
+
+)
+
+;reflect-ball-off-paddle : paddle ball → ball
+;
+;inverts a-ball dy if touching a-paddle
+(define (reflect-ball-off-paddle a-paddle a-ball)
+  (reflect-ball-vertically
+     (paddle-x-coord a-paddle)
+     (- 190 8)
+     42
+     5
+     a-ball
+  )
+)
+;reflect-ball-off-paddle
+(check-expect (reflect-ball-off-paddle (make-paddle 42 100 0) (make-ball 100 190 3 3))
+              (make-ball 100 190 3 3)
+)
+(check-expect (reflect-ball-off-paddle (make-paddle 42 50 1) (make-ball 50 185 4 -5))
+              (make-ball
+                50
+                185
+                4
+                5
+              )
+)
+(check-expect (reflect-ball-off-paddle (make-paddle 42 200 -1) (world-the-ball third-world))
+              (make-ball
+               (ball-x (world-the-ball third-world))
+               (ball-y (world-the-ball third-world))
+               (ball-dx (world-the-ball third-world))
+               (ball-dy (world-the-ball third-world))
+              )
+
+)
+
+;reflect-ball-off-bricks : list-of-brick ball → ball
+;
+;takes in a-lob and changes a-ball dy for every bick it is touching
+(define (reflect-ball-off-bricks a-lob a-ball)
+  (if (= (length a-lob) (length(bricks-remaining a-lob a-ball)))
+    (make-ball;Ball is not touching any bricks in list
+     (ball-x a-ball)
+     (ball-y a-ball)
+     (ball-dx a-ball)
+     (ball-dy a-ball)
+    )
+    (make-ball;Ball is touching bricks in list
+     (ball-x a-ball)
+     (ball-y a-ball)
+     (ball-dx a-ball)
+     (* -1 (ball-dy a-ball))
+    )
+  )
+)
+
+(check-expect (reflect-ball-off-bricks (world-bricks third-world) (world-the-ball third-world))
+              (make-ball
+               (ball-x (world-the-ball third-world))
+               (ball-y (world-the-ball third-world))
+               (ball-dx (world-the-ball third-world))
+               (* -1 (ball-dy (world-the-ball third-world)))
+              )
+)
+(check-expect (reflect-ball-off-bricks (world-bricks third-world) (make-ball 120 100 4 4))
+              (make-ball
+                120
+                100
+                4
+                -4
+              )
+)
+(check-expect (reflect-ball-off-bricks (world-bricks third-world) (make-ball 5 50 4 4))
+              (make-ball
+                5
+                50
+                4
+                4
+              )
+)
+
+;update-ball : ball -> ball
+;
+;moves a ball, accounting for bouncing off with any of the bricks in the world,
+;and the paddle, and the ceiling, as well as the right- and left- sides
+(define (update-ball a-world a-ball)
+  {cond
+   [(<= (ball-x a-ball) 10) ;;Ball touching left side
+      (make-ball
+       (ball-x a-ball)
+       (ball-y a-ball)
+       (* -1 (ball-dx a-ball))
+       (ball-dy a-ball)
+      )
+   ]
+   [(>= (ball-x a-ball) (- WORLD-WIDTH 10)) ;;Ball touching right side
+      (make-ball
+       (ball-x a-ball)
+       (ball-y a-ball)
+       (* -1 (ball-dx a-ball))
+       (ball-dy a-ball)
+      )
+   ]
+   [(<= (ball-y a-ball) 4) ;;Ball touching ceiling
+      (make-ball
+       (ball-x a-ball)
+       (ball-y a-ball)
+       (ball-dx a-ball)
+       (* -1 (ball-dy a-ball))
+      )
+   ]
+   [(not ;;Touching paddle
+     (=
+      (ball-dy a-ball)
+      (ball-dy (reflect-ball-off-paddle (world-the-paddle a-world) a-ball))
+     )
+    )
+     (reflect-ball-off-paddle (world-the-paddle a-world) a-ball)
+   ]
+   [(not ;;Touching brick
+      (=
+       (ball-dy a-ball)
+       (ball-dy (reflect-ball-off-bricks (world-bricks a-world) a-ball))
+      )
+     )
+     (reflect-ball-off-bricks (world-bricks a-world) a-ball)
+   ]
+   [else
+     (make-ball
+      (ball-x a-ball)
+      (ball-y a-ball)
+      (ball-dx a-ball)
+      (ball-dy a-ball)
+     )
+   ]
+  }
+)
+;update-ball spec
+;ball touching ceiling
+(check-expect (update-ball third-world  (make-ball 150 0 2 2))
+              (make-ball 150 0 2 -2)
+)
+;ball touching left-side
+(check-expect (update-ball third-world  (make-ball 0 30 -2 2))
+              (make-ball 0 30 2 2)
+)
+;ball touching right-side
+(check-expect (update-ball third-world  (make-ball 300 150 2 2))
+              (make-ball 300 150 -2 2)
+)
+;ball touching paddle
+(check-expect(update-ball third-world (make-ball 15 190 2 2))
+             (make-ball 15 190 2 2)
+)
+;ball touching brick
+(check-expect (update-ball third-world (world-the-ball third-world))
+              (make-ball
+               (ball-x(world-the-ball third-world))
+               (ball-y(world-the-ball third-world))
+               (ball-dx(world-the-ball third-world))
+               (* -1 (ball-dy(world-the-ball third-world)))
+              )
+)
+;ball not touching anything
+
+(check-expect(update-ball third-world (make-ball 289 170 2 2))
+             (make-ball 289 170 2 2)
+)
+
+
+(require 2htdp/universe)
+
+;List with six bricks
+(define init-world-list-of-bricks
+ (list
+  (make-brick 0 100)
+  (make-brick 41 100)
+  (make-brick 82 100)
+  (make-brick 123 100)
+  (make-brick 164 100)
+  (make-brick 205 100)
+ )
+)
+(define init-ball (make-ball 140 160 3 3))
+(define init-paddle (make-paddle 42 150 0))
+(define init-world (make-world init-paddle init-ball init-world-list-of-bricks))
+
+(big-bang init-world
+         [on-key  world-handle-key]
+         [on-release world-handle-key-up]
+         [on-tick update-world]
+         [to-draw draw-world]
+)
+
+;line 1516 may need to be redone depending on the order of events
